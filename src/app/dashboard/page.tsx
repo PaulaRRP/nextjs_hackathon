@@ -32,11 +32,25 @@ const app = [
 export default function DashboardPage() {
 
   const [file, setFile] = useState();
+  const [operationValue, setOperationValue] = useState("");
+  const [seriesValue, setSeriesValue] = useState("");
   const [isSwitchOn, setIsSwitchOn] = useState<boolean>(false);
+  const [isSwitchOnAut, setIsSwitchAutOn] = useState<boolean>(false);
   const [fileValue, setFileValue] = useState({});
+  const [minValue, setMinValue] = useState();
+  const [maxValue, setMaxValue] = useState();
+  const [minDivValue, setMinDivValue] = useState();
+  const [maxDivValue, setMaxDivValue] = useState();
+  const [minTimeValue, setMinTimeValue] = useState();
+  const [maxTimeValue, setMaxTimeValue] = useState();
+
 
   const handleSwitchChange = (value: boolean) => {
     setIsSwitchOn(value);
+  };
+
+  const handleSwitchAutChange = (value: boolean) => {
+    setIsSwitchAutOn(value);
   };
 
   useEffect(() => {
@@ -175,7 +189,7 @@ export default function DashboardPage() {
             <Divider>Gere o derivado:</Divider>
             <div className="w-full">
               <div className="w-full">
-                <SearchSelect placeholder="Selecione a Série" onValueChange={(value) => {}}>
+                <SearchSelect placeholder="Selecione a Série" onValueChange={(value) => {setSeriesValue(value)}}>
                   {/* AQUI VAI TER UM FOREACH PARA AS SERIES */}
                   <SearchSelectItem value="1">
                       Diferenciação
@@ -183,7 +197,7 @@ export default function DashboardPage() {
                 </SearchSelect>
               </div>
               <div className="w-full mt-4">
-                <SearchSelect placeholder="Selecione a Operação" onValueChange={(value) => {}}>
+                <SearchSelect placeholder="Selecione a Operação" onValueChange={(value) => {setOperationValue(value)}}>
                     <SearchSelectItem value="1">
                       Diferenciação
                     </SearchSelectItem>
@@ -213,6 +227,12 @@ export default function DashboardPage() {
                 <div className="flex items-center space-x-3 mt-4">
                   <Switch id="switch" name="switch" checked={isSwitchOn} onChange={handleSwitchChange} />
                   <label htmlFor="switch" className="text-sm text-gray-500">
+                    Preencher Valores Nulos
+                  </label>
+                </div>
+                <div className="flex items-center space-x-3 mt-4">
+                  <Switch id="switch" name="switch" checked={isSwitchOnAut} onChange={handleSwitchAutChange} />
+                  <label htmlFor="switch" className="text-sm text-gray-500">
                     Automático
                   </label>
                 </div>
@@ -234,8 +254,8 @@ export default function DashboardPage() {
                 <div className="mt-4">
                   <Text className="">Intervalo de Tempo</Text>
                   <Grid numItemsSm={1} numItemsLg={2} className="gap-4">
-                    <NumberInput placeholder="Mínimo" />
-                    <NumberInput placeholder="Máximo" />
+                    <TextInput placeholder="Mínimo" />
+                    <TextInput placeholder="Máximo" />
                   </Grid>
                 </div>
               </div>
