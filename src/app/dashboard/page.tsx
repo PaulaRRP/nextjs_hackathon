@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from "react";
-import { Card, Divider, Text, Button, NumberInput, Title, Flex, Grid, SearchSelect, SearchSelectItem, Switch} from '@tremor/react';
+import { Card, Divider, Text, TextInput, Button, NumberInput, Title, Flex, Grid, SearchSelect, SearchSelectItem, Switch} from '@tremor/react';
 import Chart from './chart';
 let csvToJson = require('convert-csv-to-json');
 // csvToJson.parseSubArray('*',',').getJsonFromCsv('myInputFile.csv');
@@ -28,44 +28,64 @@ const app = [
   { name: '/downloads', value: 191 }
 ];
 
-const data = [
-  {
-    category: 'Website',
-    stat: '10,234',
-    data: website
-  },
-  {
-    category: 'Online Shop',
-    stat: '12,543',
-    data: shop
-  },
-  {
-    category: 'Mobile App',
-    stat: '2,543',
-    data: app
-  }
-];
 
 export default function DashboardPage() {
 
   const [file, setFile] = useState();
   const [isSwitchOn, setIsSwitchOn] = useState<boolean>(false);
+  const [fileValue, setFileValue] = useState({});
 
   const handleSwitchChange = (value: boolean) => {
     setIsSwitchOn(value);
   };
 
   useEffect(() => {
-    const fileReader = new FileReader();
+    
     //CHAMAR A ROTA PARA PEGAR AS SÉRIES UPADAS AQUI DENTRO
-  })
+  });
+
+  const csvJSON = (csv, titulo) => {
+    const lines = csv.split('\n')
+    let result = {
+      titulo: titulo,
+      linhas: [], //sao os anos posicao 0
+      colunas: [],
+      valores: [], //array de arrays que sao as linhas
+    }
+    const headers = lines[0].split('"')
+    result.colunas = headers.filter((header => header.length > 3))
+
+    for (let i = 1; i < lines.length; i++) {        
+        if (!lines[i])
+            continue
+
+        const currentline = lines[i].split(',')
+
+        for (let j = 0; j < headers.length; j++) {
+          if(!currentline[j])
+            continue
+
+          let valor = currentline[j].replace(/[\s\r]/g, '');
+          if(j === 0){
+            result.linhas.push(valor.split(",")[0])
+          }else{
+            result.valores.push(valor.split(","))
+          }
+        }
+    }
+
+    return result
+}
 
   const handleOnChange = (e) => {
       setFile(e.target.files[0]);
   };
 
   const handleOnSubmitFile = (e) => {
+    const fileReader = new FileReader();
+
     e.preventDefault();
+
 
     if (file) {
         fileReader.onload = function (event) {
@@ -73,39 +93,54 @@ export default function DashboardPage() {
         };
 
         fileReader.readAsText(file);
+
+        fileReader.onload = function(e) {
+          let rawLog = fileReader.result;
+          
+          const json = csvJSON(rawLog, file.name)
+
+          setFileValue(json)
+      };
     }
 };
 
   const handleOnSubmit = (e) => {
       
   };
+
+  const handleDownloadCSV = (e) => {
+    let linhas = []
+    fileValue.valores.forEach((arrayValor, index) => {
+        let ano = fileValue.linhas[index]
+        let valores = arrayValor
+
+        linhas.push([ano, ...valores])
+    })
+
+    let strColunas = fileValue.colunas.map(coluna => `"${coluna}"`).join(",")
+    let strLinhas = linhas.map(linha => {
+      return `"${linha.join('","')}"`
+    })
+
+    const csvContent = `data:text/csv;charset=utf-8," ",${strColunas},/r,${strLinhas.join(",/r,")}`
+
+    console.log(csvContent)
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "derivado.csv");
+    
+    
+    document.body.appendChild(link);
+    link.click();
+
+  }
+
+
   return (
     <main className="p-4 md:p-10 mx-auto max-w-7xl">
       <Grid numItemsSm={2} numItemsLg={3} className="gap-6">
-        {/* {data.map((item) => (
-          <Card key={item.category}>
-            <Title>{item.category}</Title>
-            <Flex
-              justifyContent="start"
-              alignItems="baseline"
-              className="space-x-2"
-            >
-              <Metric>{item.stat}</Metric>
-              <Text>Total views</Text>
-            </Flex>
-            <Flex className="mt-6">
-              <Text>Pages</Text>
-              <Text className="text-right">Views</Text>
-            </Flex>
-            <BarList
-              data={item.data}
-              valueFormatter={(number: number) =>
-                Intl.NumberFormat('us').format(number).toString()
-              }
-              className="mt-2"
-            />
-          </Card>
-        ))} */}
         <Card className="col-span-1">
             <Title>Gerar Derivado</Title>
             <Flex
@@ -141,35 +176,37 @@ export default function DashboardPage() {
             <div className="w-full">
               <div className="w-full">
                 <SearchSelect placeholder="Selecione a Série" onValueChange={(value) => {}}>
+                  {/* AQUI VAI TER UM FOREACH PARA AS SERIES */}
                   <SearchSelectItem value="1">
-                  Kilometers
-                  </SearchSelectItem>
-                  <SearchSelectItem value="2">
-                  Meters
-                  </SearchSelectItem>
-                  <SearchSelectItem value="3">
-                  Miles
-                  </SearchSelectItem>
-                  <SearchSelectItem value="4">
-                  Nautical Miles
+                      Diferenciação
                   </SearchSelectItem>
                 </SearchSelect>
               </div>
               <div className="w-full mt-4">
                 <SearchSelect placeholder="Selecione a Operação" onValueChange={(value) => {}}>
                     <SearchSelectItem value="1">
-                    Kilometers
+                      Diferenciação
                     </SearchSelectItem>
                     <SearchSelectItem value="2">
-                    Meters
+                      Transformação Logarítimica
                     </SearchSelectItem>
                     <SearchSelectItem value="3">
-                    Miles
+                      Integração
                     </SearchSelectItem>
                     <SearchSelectItem value="4">
-                    Nautical Miles
+                      Autocorrelação
+                    </SearchSelectItem>
+                    <SearchSelectItem value="5">
+                      Média Móvel
+                    </SearchSelectItem>
+                    <SearchSelectItem value="6">
+                      Decomposição
+                    </SearchSelectItem>
+                    <SearchSelectItem value="7">
+                      Agrupamento por Coluna
                     </SearchSelectItem>
                 </SearchSelect>
+                <TextInput className="mt-4" placeholder="Digite a Coluna" />
               </div>
               <div className="mt-8">
                 <Text>Inserção de Valores</Text>
@@ -181,21 +218,21 @@ export default function DashboardPage() {
                 </div>
                 <Text className="mt-4">Definir limites</Text>
                 <div className="mt-4">
-                  <Text className="">Campo 1</Text>
+                  <Text className="">Limite de valores</Text>
                   <Grid numItemsSm={1} numItemsLg={2} className="gap-4">
                     <NumberInput placeholder="Mínimo" />
                     <NumberInput placeholder="Máximo" />
                   </Grid>
                 </div>
                 <div className="mt-4">
-                  <Text className="">Campo 2</Text>
+                  <Text className="">Limite de Divergência</Text>
                   <Grid numItemsSm={1} numItemsLg={2} className="gap-4">
                     <NumberInput placeholder="Mínimo" />
                     <NumberInput placeholder="Máximo" />
                   </Grid>
                 </div>
                 <div className="mt-4">
-                  <Text className="">Campo 3</Text>
+                  <Text className="">Intervalo de Tempo</Text>
                   <Grid numItemsSm={1} numItemsLg={2} className="gap-4">
                     <NumberInput placeholder="Mínimo" />
                     <NumberInput placeholder="Máximo" />
@@ -211,6 +248,17 @@ export default function DashboardPage() {
                       }}
                   >
                       Gerar Derivado
+                  </Button>
+
+                  <Button 
+                      className="mt-10 bg-cyan-700 border-cyan-700 hover:bg-cyan-800 ml-10"
+                      size="xs"
+                      variant="primary"
+                      onClick={(e) => {
+                          handleDownloadCSV(e);
+                      }}
+                  >
+                      Download do Derivado
                   </Button>
             </div>
           </Card>
